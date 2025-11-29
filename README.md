@@ -22,80 +22,68 @@ FDM places different message signals in separate, non-overlapping frequency band
 
 # Code:
 ````
-clc;
-clear;
-close;
+t = linspace(0, 1, 1000);
+fs = 1000;
 
-fs = 50000; 
-t = 0:1/fs:0.01;
+freqs = [6 11 17 23 29 36];
+amps = [1 2 3 4 5 6];
 
-fm = [200, 400, 600, 800, 1000, 1200];  
-m1 = sin(2*%pi*fm(1)*t);
-m2 = sin(2*%pi*fm(2)*t);
-m3 = sin(2*%pi*fm(3)*t);
-m4 = sin(2*%pi*fm(4)*t);
-m5 = sin(2*%pi*fm(5)*t);
-m6 = sin(2*%pi*fm(6)*t);
+signals = zeros(6, length(t));
+for i = 1:6
+    signals(i,:) = amps(i) * sin(2*%pi*freqs(i)*t);
+end
 
-fc = [4000, 6000, 8000, 10000, 12000, 14000];
+fdm_signal = zeros(1, length(t));
+for i = 1:6
+    fdm_signal = fdm_signal + signals(i,:);
+end
 
-c1 = cos(2*%pi*fc(1)*t);
-c2 = cos(2*%pi*fc(2)*t);
-c3 = cos(2*%pi*fc(3)*t);
-c4 = cos(2*%pi*fc(4)*t);
-c5 = cos(2*%pi*fc(5)*t);
-c6 = cos(2*%pi*fc(6)*t);
+order = 50;
+cutoff_freq = 10 / (fs/2);
+h = ffilt("lp", order, cutoff_freq);
 
-s1 = m1 .* c1;
-s2 = m2 .* c2;
-s3 = m3 .* c3;
-s4 = m4 .* c4;
-s5 = m5 .* c5;
-s6 = m6 .* c6;
+demux = zeros(6, length(t));
+for i = 1:6
+    mixed = fdm_signal .* sin(2*%pi*freqs(i)*t);
+    demux(i,:) = filter(h, 1, mixed);
+end
 
-fdm_signal = s1 + s2 + s3 + s4 + s5 + s6;
+scf(1);
+clf;
+for i = 1:6
+    subplot(3,2,i);
+    plot(t,signals(i,:));
+    title("Original Signal f=" + string(freqs(i)));
+end
 
-function y = lowpass(x, n)
-    h = ones(1, n)/n;
-    y = conv(x, h, "same");
-endfunction
+scf(2);
+clf;
+plot(t,fdm_signal);
+title("FDM Signal");
 
-r1 = lowpass(fdm_signal .* c1, 100);
-r2 = lowpass(fdm_signal .* c2, 100);
-r3 = lowpass(fdm_signal .* c3, 100);
-r4 = lowpass(fdm_signal .* c4, 100);
-r5 = lowpass(fdm_signal .* c5, 100);
-r6 = lowpass(fdm_signal .* c6, 100);
+scf(3);
+clf;
+for i = 1:6
+    subplot(3,2,i);
+    plot(t,demux(i,:));
+    title("Demultiplexed Signal f=" + string(freqs(i)));
+end
 
-figure(0)
-subplot(3,1,1); plot(t, m1); title("Message Signal 1 (200Hz)");
-subplot(3,1,2); plot(t, m2); title("Message Signal 2 (400Hz)");
-subplot(3,1,3); plot(t, m3); title("Message Signal 3 (600Hz)");
-figure (1)
-subplot(3,1,1); plot(t, m4); title("Message Signal 4 (800Hz)");
-subplot(3,1,2); plot(t, m5); title("Message Signal 5 (1000Hz)");
-subplot(3,1,3); plot(t, m6); title("Message Signal 6 (1200Hz)");
 
-figure(2)
-plot(t, fdm_signal); title("Multiplexed FDM Signal");
-
-figure(3)
-subplot(6,1,1); plot(t, r1); title("Demodulated Signal 1");
-subplot(6,1,2); plot(t, r2); title("Demodulated Signal 2");
-subplot(6,1,3); plot(t, r3); title("Demodulated Signal 3");
-subplot(6,1,4); plot(t, r4); title("Demodulated Signal 4");
-subplot(6,1,5); plot(t, r5); title("Demodulated Signal 5");
-subplot(6,1,6); plot(t, r6); title("Demodulated Signal 6");
-
-disp("✅ FDM and Demodulation completed successfully!");
 
 ````
 # Output:
-<img width="1918" height="1076" alt="image" src="https://github.com/user-attachments/assets/2306b46a-cc10-4633-a0db-edfc30d42e85" />
+<img width="1257" height="712" alt="image" src="https://github.com/user-attachments/assets/ab27700d-7e92-45b2-b368-7ed0c6647b2a" />
+<img width="676" height="528" alt="image" src="https://github.com/user-attachments/assets/d405ae88-0f10-47f3-aedc-fc06b2db06c3" />
+<img width="1186" height="673" alt="image" src="https://github.com/user-attachments/assets/6921f8d0-685e-4792-b8ee-e284981646af" />
+
+
 
 # Calculation:
-![WhatsApp Image 2025-11-28 at 22 46 10_584cf41a](https://github.com/user-attachments/assets/2c10333f-0533-41e3-80d2-8a6374d6ac62)
-![WhatsApp Image 2025-11-28 at 22 46 57_a9af032b](https://github.com/user-attachments/assets/fcf2d8d2-f566-4455-af6f-355e967790c6)
+![WhatsApp Image 2025-11-29 at 15 46 05_2a150197](https://github.com/user-attachments/assets/673d2c8d-194c-4495-9a2c-8cfc8256d029)
+
+![WhatsApp Image 2025-11-29 at 15 46 13_34536e63](https://github.com/user-attachments/assets/867fa8ce-9067-45c5-8fdf-17b292a945d1)
+
 
 # Result:
 FDM experiment was successfully simulated and verified using Python. The message signals were multiplexed and perfectly recovered.
